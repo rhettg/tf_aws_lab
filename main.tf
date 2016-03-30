@@ -4,35 +4,84 @@ provider "aws" {
     region = "${var.region}"
 }
 
-resource "aws_vpc" "vpc" {
+resource "aws_vpc" "main" {
     cidr_block = "10.0.0.0/16"
 
+    enable_dns_hostnames = true
+
     tags {
-        Name = "rhettg-lab"
+        Name = "${var.name}"
     }
 }
 
-resource "aws_vpn_gateway" "vpn_gateway" {
-    vpc_id = "${aws_vpc.vpc.id}"
+resource "aws_internet_gateway" "main" {
+  vpc_id = "${aws_vpc.main.id}"
+  tags { Name = "${var.name}" }
 }
 
-resource "aws_customer_gateway" "customer_gateway" {
-    bgp_asn = 60000
-    ip_address = "172.0.0.1"
-    type = "ipsec.1"
+resource "aws_route_table" "public" {
+  vpc_id = "${aws_vpc.main.id}"
+  tags { Name = "${var.name}-public" }
 }
 
-resource "aws_vpn_connection" "main" {
-    vpn_gateway_id = "${aws_vpn_gateway.vpn_gateway.id}"
-    customer_gateway_id = "${aws_customer_gateway.customer_gateway.id}"
-    type = "ipsec.1"
-    static_routes_only = true
+resource "aws_route" "public_internet_gateway" {
+    route_table_id = "${aws_route_table.public.id}"
+    destination_cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.main.id}"
 }
 
-output "vpn_ip" {
-    value = "${aws_vpn_connection.main.tunnel1_address}"
+resource "aws_subnet" "public" {
+    vpc_id = "${aws_vpc.main.id}"
+    cidr_block = "10.0.1.0/24"
+    map_public_ip_on_launch = true
+
+    tags {
+        Name = "${var.name}-public"
+    }
 }
 
-output "vpn_secret" {
-    value = "${aws_vpn_connection.main.tunnel1_preshared_key}"
+resource "aws_route_table_association" "public" {
+  subnet_id = "${aws_subnet.public.id}"
+  route_table_id = "${aws_route_table.public.id}"
+}
+
+resource "aws_security_group" "vpn" {
+    name = "${var.name}-vpn-sg"
+    vpc_id = "${aws_vpc.main.id}"
+
+    ingress {
+        from_port = 8
+        to_port = 0
+        protocol = "icmp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+resource "aws_instance" "vpn" {
+    ami = "ami-c80b0aa2"
+    instance_type = "t2.small"
+
+    subnet_id = "${aws_subnet.public.id}"
+    vpc_security_group_ids = ["${aws_security_group.vpn.id}"]
+    associate_public_ip_address = true
+
+    key_name = "${var.key_name}"
+
+    tags {
+        Name = "${var.name}-vpn"
+    }
 }
