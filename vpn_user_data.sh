@@ -8,6 +8,8 @@ echo "vpn0" > /etc/hostname
 hostname -F /etc/hostname
 
 echo "Configuring Network"
+# See https://wiki.strongswan.org/projects/strongswan/wiki/ForwardingAndSplitTunneling
+
 cat <<"EOF" >> /etc/sysctl.conf
 net.ipv4.ip_forward = 1
 net.ipv6.conf.all.forwarding = 1
@@ -18,12 +20,13 @@ sysctl -p
 iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
 iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -j MASQUERADE
 
-echo "Installing StrongSwan"
-
+echo "Installing Packages"
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
     strongswan \
     strongswan-plugin-xauth-generic \
     iptables-persistent
+
+echo "Configuring StrongSwan"
 
 cat <<"EOF" > /etc/ipsec.conf
 config setup
