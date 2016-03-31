@@ -7,9 +7,23 @@ echo "Setting hostname"
 echo "vpn0" > /etc/hostname
 hostname -F /etc/hostname
 
+echo "Configuring Network"
+cat <<"EOF" >> /etc/sysctl.conf
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
+EOF
+
+sysctl -p
+
+iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
+iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -j MASQUERADE
+
 echo "Installing StrongSwan"
 
-apt-get install -y strongswan strongswan-plugin-xauth-generic
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    strongswan \
+    strongswan-plugin-xauth-generic \
+    iptables-persistent
 
 cat <<"EOF" > /etc/ipsec.conf
 config setup
@@ -17,7 +31,7 @@ config setup
    uniqueids=never
 conn cisco
     keyexchange=ikev1
-    leftsubnet=10.0.1.0/16
+    leftsubnet=10.0.0.0/16
     xauth=server
     leftfirewall=yes
     leftauth=psk
@@ -41,7 +55,7 @@ charon {
       # INTERNAL_IP4_DNS
       dns = 10.0.0.2
       # UNITY_DEF_DOMAIN
-      28674 = stage-us-west-2
+      28674 = rhettg-lab
       # UNITY_SPLIT_INCLUDE / split-include
       split-include = 10.0.0.0/16
     }
@@ -58,6 +72,7 @@ github : XAUTH "password"
 
 EOF
 
+ipsec rereadall
 service strongswan restart
 
 echo "user_data Done"
