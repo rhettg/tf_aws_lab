@@ -107,3 +107,7 @@ resource you create in the VPC.
     PING test.lab (10.0.249.113): 56 data bytes
     64 bytes from 10.0.249.113: icmp_seq=0 ttl=64 time=71.382 ms
     ...
+
+## Authors
+
+Originally suggested by @splaice, initial VPN configuration by @bickfordb and terraform-fu by @rhettg.
