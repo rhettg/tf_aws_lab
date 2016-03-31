@@ -45,8 +45,8 @@ resource "aws_security_group" "vpn" {
 }
 
 resource "aws_instance" "vpn" {
-    ami = "ami-c80b0aa2"
-    instance_type = "t2.small"
+    ami = "${var.vpn_base_ami}"
+    instance_type = "${var.vpn_instance_type}"
 
     subnet_id = "${aws_subnet.public.id}"
     vpc_security_group_ids = ["${aws_security_group.vpn.id}"]
