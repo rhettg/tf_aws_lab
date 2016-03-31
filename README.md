@@ -1,6 +1,7 @@
 # tf_aws_vpc_lab
 
-A Terraform module for creating a VPC Laboratory with a simple Bastion/VPN Host.
+A Terraform module for creating a VPC Laboratory allowing you to connect to
+your lab network using a IPSec VPN.
 
 This is useful for quickly and securely building a development infrastructure
 in AWS. It integrates with private Route53 so you'll get a complete domain and
