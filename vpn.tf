@@ -4,7 +4,6 @@ resource "aws_security_group" "vpn" {
 
     tags {
         Environment = "${var.name}-vpn"
-        Environment = "${var.name}"
     }
 
     ingress {
@@ -53,9 +52,14 @@ resource "template_file" "vpn_user_data" {
         vpc_domain = "${var.name}"
         vpn_hostname = "vpn0"
         vpn_rightip = "${cidrsubnet(var.vpc_cidr, 8, 250)}"
-        vpn_psk = "${var.vpn_psk}"
-        vpn_xauth_user = "${var.vpn_user}"
-        vpn_xauth_password = "${var.vpn_password}"
+        vpn_psk = "${coalesce(var.vpn_psk, replace(uuid(), \"-\", \"\"))}"
+        vpn_xauth_user = "${coalesce(var.vpn_user, var.name)}"
+        vpn_xauth_password = "${coalesce(var.vpn_password, replace(uuid(), \"-\", \"\"))}"
+    }
+
+    # These variables, if left to their default will shift on each run
+    lifecycle {
+        ignore_changes = ["vars.vpn_psk", "vars.vpn_xauth_password"]
     }
 }
 
@@ -71,6 +75,12 @@ resource "aws_instance" "vpn" {
 
     user_data = "${template_file.vpn_user_data.rendered}"
 
+    # A few of these fields are due to:
+    # https://github.com/hashicorp/terraform/issues/5956
+    lifecycle {
+        ignore_changes = ["user_data", "associate_public_ip_address", "source_dest_check"]
+    }
+
     tags {
         Name = "vpn0-${var.name}"
         Environment = "${var.name}"
@@ -78,10 +88,13 @@ resource "aws_instance" "vpn" {
 }
 
 resource "aws_route53_record" "vpn0" {
-   zone_id = "${aws_route53_zone.main.zone_id}"
-   name = "vpn0.${var.name}"
-   type = "A"
-   ttl = "300"
-   records = ["${aws_instance.vpn.private_ip}"]
+    zone_id = "${aws_route53_zone.main.zone_id}"
+    name = "vpn0.${var.name}"
+    type = "A"
+    ttl = "300"
+    records = ["${aws_instance.vpn.private_ip}"]
+    lifecycle {
+        ignore_changes = ["records.#"]
+    }
 }
 

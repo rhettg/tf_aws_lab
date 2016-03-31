@@ -59,7 +59,7 @@ resource "aws_route" "public_internet_gateway" {
 
 resource "aws_subnet" "public" {
     vpc_id = "${aws_vpc.main.id}"
-    cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 1)}"
+    cidr_block = "${coalesce(var.vpn_subnet, cidrsubnet(var.vpc_cidr, 8, 249))}"
     map_public_ip_on_launch = true
 
     tags {
@@ -71,4 +71,27 @@ resource "aws_subnet" "public" {
 resource "aws_route_table_association" "public" {
     subnet_id = "${aws_subnet.public.id}"
     route_table_id = "${aws_route_table.public.id}"
+}
+
+resource "aws_security_group" "main" {
+    name = "${var.name}-main-sg"
+    vpc_id = "${aws_vpc.main.id}"
+
+    tags {
+        Environment = "${var.name}-main"
+    }
+
+    ingress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["${aws_vpc.main.cidr_block}"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
 }
