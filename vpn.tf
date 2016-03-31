@@ -44,6 +44,21 @@ resource "aws_security_group" "vpn" {
     }
 }
 
+resource "template_file" "vpn_user_data" {
+    template = "${file(\"${path.module}/vpn_user_data.sh\")}"
+
+    vars {
+        vpc_cidr = "${var.vpc_cidr}"
+        vpc_dns = "${cidrhost(cidrsubnet(var.vpc_cidr, 8, 0),2)}"
+        vpc_domain = "${var.name}"
+        vpn_hostname = "vpn0"
+        vpn_rightip = "${cidrsubnet(var.vpc_cidr, 8, 250)}"
+        vpn_psk = "${var.vpn_psk}"
+        vpn_xauth_user = "${var.vpn_user}"
+        vpn_xauth_password = "${var.vpn_password}"
+    }
+}
+
 resource "aws_instance" "vpn" {
     ami = "${var.vpn_base_ami}"
     instance_type = "${var.vpn_instance_type}"
@@ -54,7 +69,7 @@ resource "aws_instance" "vpn" {
 
     key_name = "${var.key_name}"
 
-    user_data = "${file(\"vpn_user_data.sh\")}"
+    user_data = "${template_file.vpn_user_data.rendered}"
 
     tags {
         Name = "vpn0-${var.name}"

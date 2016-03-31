@@ -16,3 +16,16 @@ variable "vpn_base_ami" {
 variable "vpn_instance_type" {
     default = "t2.small"
 }
+
+variable "vpn_psk" {
+    description = "Pre-Shared Key for VPN"
+}
+
+variable "vpn_user" {
+    default = "lab"
+    description = "VPN User"
+}
+
+variable "vpn_password" {
+    description = "Password for VPN user"
+}

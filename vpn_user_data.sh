@@ -4,7 +4,7 @@ set -e
 
 echo "Setting hostname"
 
-echo "vpn0" > /etc/hostname
+echo "${vpn_hostname}" > /etc/hostname
 hostname -F /etc/hostname
 
 echo "Configuring Network"
@@ -17,8 +17,8 @@ EOF
 
 sysctl -p
 
-iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
-iptables -t nat -A POSTROUTING -s 10.0.0.0/16 -o eth0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s ${vpc_cidr} -o eth0 -m policy --dir out --pol ipsec -j ACCEPT
+iptables -t nat -A POSTROUTING -s ${vpc_cidr} -o eth0 -j MASQUERADE
 
 echo "Installing Packages"
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -34,33 +34,33 @@ config setup
    uniqueids=never
 conn cisco
     keyexchange=ikev1
-    leftsubnet=10.0.0.0/16
+    leftsubnet=${vpc_cidr}
     xauth=server
     leftfirewall=yes
     leftauth=psk
     right=%any
     rightauth=psk
     rightauth2=xauth
-    rightsourceip=10.0.250.0/24
-    rightdns=10.0.0.2
+    rightsourceip=${vpn_rightip}
+    rightdns=${vpc_dns}
     auto=add
 
 EOF
 
 cat <<"EOF" > /etc/strongswan.conf
 charon {
-  dns1 = 10.0.0.2
+  dns1 = ${vpc_dns}
   cisco_unity = yes
   load_modular = yes
   plugins {
     include strongswan.d/charon/*.conf
     attr {
       # INTERNAL_IP4_DNS
-      dns = 10.0.0.2
+      dns = ${vpc_dns}
       # UNITY_DEF_DOMAIN
-      28674 = rhettg-lab
+      28674 = ${vpc_domain}
       # UNITY_SPLIT_INCLUDE / split-include
-      split-include = 10.0.0.0/16
+      split-include = ${vpc_cidr}
     }
   }
 }
@@ -70,8 +70,8 @@ EOF
 
 cat <<"EOF" > /etc/ipsec.secrets
 
-: PSK "ABIGSECRET"
-github : XAUTH "password"
+: PSK "${vpn_psk}"
+${vpn_xauth_user} : XAUTH "${vpn_xauth_password}"
 
 EOF
 
