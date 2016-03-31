@@ -1,4 +1,4 @@
-# tf_aws_vpc_lab
+# tf_aws_lab
 
 A Terraform module for creating a VPC Laboratory allowing you to connect to
 your lab network using a IPSec VPN.
@@ -60,7 +60,7 @@ provider "aws" {
 }
 
 module "vpc_lab" {
-    source = "github.com/rhettg/tf_aws_vpc_lab"
+    source = "github.com/rhettg/tf_aws_lab"
 }
 
 resource "aws_instance" "test" {
@@ -110,4 +110,6 @@ resource you create in the VPC.
 
 ## Authors
 
-Originally suggested by @splaice, initial VPN configuration by @bickfordb and terraform-fu by @rhettg.
+Originally suggested by [@splaice](https://github.com/splaice), initial VPN
+configuration by [@bickfordb](https://github.com/bickfordb) and terraform-fu by
+[@rhettg](https://github.com/rhettg).
