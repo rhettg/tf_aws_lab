@@ -116,7 +116,11 @@ While Terraform has "provisioners" such as file upload or script execution, you
 can't really easily use them here because you'd have to be connected to your
 VPN to connect to your hosts.
 
-Doing all your provisioning with just user_data scripts can also work, but you're limited to 16Kb.
+In a production environment you should likely be building images with Packer,
+but for prototyping that's not a great workflow.
+
+Doing all your provisioning with just user_data scripts can also work, but
+you're limited to 16Kb.
 
 To get around these limitations, tf_aws_lab has helpfully configured an S3
 bucket your instances inside the VPC can access.
@@ -127,6 +131,7 @@ You can define resources that should exist in your bucket:
         bucket = "${module.vpc_lab.bucket_name}"
         key = "lab.tgz"
         source = "build/lab.tgz"
+        etag = "${md5(file(\"build/lab.tgz\"))}"
     }
 
 To effectively use, you should add this to your instance:
