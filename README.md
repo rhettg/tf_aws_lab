@@ -48,6 +48,8 @@ You might also use:
 
   * `vpc_id`
   * `vpn_instance_id`
+  * `bucket_name` - S3 Bucket name to stage data.
+  * `bucket_url` - S3 URL you can use to pull resources out of the bucket
 
 
 ## Example
@@ -107,6 +109,63 @@ resource you create in the VPC.
     PING test.lab (10.0.249.113): 56 data bytes
     64 bytes from 10.0.249.113: icmp_seq=0 ttl=64 time=71.382 ms
     ...
+
+## Uploading Data
+
+While Terraform has "provisioners" such as file upload or script execution, you
+can't really easily use them here because you'd have to be connected to your
+VPN to connect to your hosts.
+
+Doing all your provisioning with just user_data scripts can also work, but you're limited to 16Kb.
+
+To get around these limitations, tf_aws_lab has helpfully configured an S3
+bucket your instances inside the VPC can access.
+
+You can define resources that should exist in your bucket:
+
+    resource "aws_s3_bucket_object" "lab_provision" {
+        bucket = "${module.vpc_lab.bucket_name}"
+        key = "lab.tgz"
+        source = "build/lab.tgz"
+    }
+
+To effectively use, you should add this to your instance:
+
+    depends_on = ["aws_s3_bucket_object.lab_provision"]
+
+Then you can templatize your user_data script such as:
+
+    resource "template_file" "test_user_data" {
+        count = 1
+        template = "${file(\"test_user_data.sh\")}"
+
+        vars {
+            hostname = "test${count.index}"
+            bucket_url = "${module.vpc_lab.bucket_url}"
+        }
+    }
+
+And your `test_user_data.sh`
+
+```
+#!/bin/bash
+
+set -e
+
+echo "Setting hostname"
+
+echo "${hostname}" > /etc/hostname
+hostname -F /etc/hostname
+
+cd /tmp
+wget ${bucket_url}/lab.tgz
+tar --no-same-owner -xzf lab.tgz
+./provision.sh
+```
+
+The content you upload is of course up to you. A simple binary, a set of python
+scripts, or even a full puppet manifest.
+
 
 ## Authors
 

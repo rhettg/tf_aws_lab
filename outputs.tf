@@ -22,6 +22,14 @@ output "domain" {
   value = "${aws_route53_zone.main.name}"
 }
 
+output "bucket_name" {
+  value = "${aws_s3_bucket.lab.bucket}"
+}
+
+output "bucket_url" {
+  value = "https://s3.amazonaws.com/${aws_s3_bucket.lab.bucket}"
+}
+
 output "vpn_ip" {
   value = "${aws_instance.vpn.public_ip}"
 }
