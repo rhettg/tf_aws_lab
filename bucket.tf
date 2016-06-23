@@ -3,7 +3,7 @@ resource "template_file" "bucket_policy" {
 
     vars {
         vpc_id = "${aws_vpc.main.id}"
-        bucket_name = "${var.name}-lab-bucket"
+        bucket_name = "${coalesce(var.lab_bucket_name, format(\"%s-lab-bucket\", var.name))}"
     }
 }
 
@@ -14,7 +14,7 @@ resource "aws_vpc_endpoint" "bucket" {
 }
 
 resource "aws_s3_bucket" "lab" {
-    bucket = "${var.name}-lab-bucket"
+    bucket = "${coalesce(var.lab_bucket_name, format(\"%s-lab-bucket\", var.name))}"
     force_destroy = true
 
     acl = "private"

@@ -7,6 +7,11 @@ variable "name" {
     default = "lab"
 }
 
+variable "lab_bucket_name" {
+    default = ""
+    description = "S3 bucket name"
+}
+
 variable "vpc_cidr" {
     default = "10.0.0.0/16"
 }

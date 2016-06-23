@@ -22,6 +22,7 @@ DNS records inside your VPC.
 
 ### Optional
 
+ * `lab_bucket_name` - Name for an S3 bucket. Defaults to `<lab name>-lab-bucket`
  * `vpn_user` - Defaults to lab name
  * `vpn_password` - Default generates a uuid
  * `vpn_sharedkey` - Default generates a uuid
