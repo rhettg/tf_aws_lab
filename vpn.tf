@@ -43,8 +43,8 @@ resource "aws_security_group" "vpn" {
     }
 }
 
-resource "template_file" "vpn_user_data" {
-    template = "${file(\"${path.module}/vpn_user_data.sh\")}"
+data "template_file" "vpn_user_data" {
+    template = "${file("${path.module}/vpn_user_data.sh")}"
 
     vars {
         vpc_cidr = "${var.vpc_cidr}"
@@ -52,14 +52,9 @@ resource "template_file" "vpn_user_data" {
         vpc_domain = "${var.name}"
         vpn_hostname = "vpn0"
         vpn_rightip = "${cidrsubnet(var.vpc_cidr, 8, 250)}"
-        vpn_psk = "${coalesce(var.vpn_psk, replace(uuid(), \"-\", \"\"))}"
+        vpn_psk = "${coalesce(var.vpn_psk, replace(uuid(), "-", ""))}"
         vpn_xauth_user = "${coalesce(var.vpn_user, var.name)}"
-        vpn_xauth_password = "${coalesce(var.vpn_password, replace(uuid(), \"-\", \"\"))}"
-    }
-
-    # These variables, if left to their default will shift on each run
-    lifecycle {
-        ignore_changes = ["vars.vpn_psk", "vars.vpn_xauth_password"]
+        vpn_xauth_password = "${coalesce(var.vpn_password, replace(uuid(), "-", ""))}"
     }
 }
 
@@ -73,7 +68,7 @@ resource "aws_instance" "vpn" {
 
     key_name = "${var.key_name}"
 
-    user_data = "${template_file.vpn_user_data.rendered}"
+    user_data = "${data.template_file.vpn_user_data.rendered}"
 
     # A few of these fields are due to:
     # https://github.com/hashicorp/terraform/issues/5956

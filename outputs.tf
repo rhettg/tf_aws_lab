@@ -43,13 +43,13 @@ output "vpn_ip" {
 }
 
 output "vpn_sharedkey" {
-  value = "${template_file.vpn_user_data.vars.vpn_psk}"
+  value = "${data.template_file.vpn_user_data.vars.vpn_psk}"
 }
 
 output "vpn_user" {
-  value = "${template_file.vpn_user_data.vars.vpn_xauth_user}"
+  value = "${data.template_file.vpn_user_data.vars.vpn_xauth_user}"
 }
 
 output "vpn_password" {
-  value = "${template_file.vpn_user_data.vars.vpn_xauth_password}"
+  value = "${data.template_file.vpn_user_data.vars.vpn_xauth_password}"
 }

@@ -1,9 +1,9 @@
-resource "template_file" "bucket_policy" {
-    template = "${file(\"${path.module}/s3_policy.json\")}"
+data "template_file" "bucket_policy" {
+    template = "${file("${path.module}/s3_policy.json")}"
 
     vars {
         vpc_id = "${aws_vpc.main.id}"
-        bucket_name = "${coalesce(var.lab_bucket_name, format(\"%s-lab-bucket\", var.name))}"
+        bucket_name = "${coalesce(var.lab_bucket_name, format("%s-lab-bucket", var.name))}"
     }
 }
 
@@ -14,11 +14,11 @@ resource "aws_vpc_endpoint" "bucket" {
 }
 
 resource "aws_s3_bucket" "lab" {
-    bucket = "${coalesce(var.lab_bucket_name, format(\"%s-lab-bucket\", var.name))}"
+    bucket = "${coalesce(var.lab_bucket_name, format("%s-lab-bucket", var.name))}"
     force_destroy = true
 
     acl = "private"
-    policy = "${template_file.bucket_policy.rendered}"
+    policy = "${data.template_file.bucket_policy.rendered}"
 
     tags {
         Environment = "${var.name}"
